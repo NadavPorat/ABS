@@ -1,13 +1,21 @@
 package engine;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 public interface Engine {
 
-    Boolean Withdrawal (int amount);
-    Boolean Deposit (int amount);
-    boolean Loan();
+    boolean Withdrawal(String customerID, int amount);
+    boolean Deposit(String customerID, int amount);
+    ArrayList<String> filterLoans(String customerID, int amount, String category, int interestParYaz, int minYazForLoan);
     boolean buildFromXML(String path);
-    String printExistLoans();
-    String printCustomers();
-
-
+    StringBuilder printExistLoans();
+    StringBuilder printCustomers();
+    boolean isInitialized();
+    int getCurrentTime();
+    ArrayList<String> getCustomersNames();
+    Map<String,String> getCustomerAndBalanceList();
+    List<String> getListOfCategory();
+    boolean placementLoanByName(String customerID, int amount, ArrayList<String> loanNameToInvest) throws Exception;
 }

@@ -1,106 +1,164 @@
 package app;
-import IO.UserInput;
-import IO.inputOutput;
+
+import IO.InputOutput;
+import IO.eListCustomerType;
+import IO.eUserInput;
 import engine.Engine;
 
 import java.io.FileNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 
 
 public class ABSapp {
 
-        private Engine engine;
+    private Engine engine;
 
-        public void init(Engine engine) {
-            this.engine = engine;
+    public void init(Engine engine) {
+        this.engine = engine;
+    }
+
+    public void run() {
+        eUserInput userInput = eUserInput.INIT;
+        InputOutput.welcome();
+
+        while (userInput != eUserInput.QUIT) {
+
+            userInput = InputOutput.mainMenu(engine.getCurrentTime());
+            if (engine.isInitialized() || userInput.equals(eUserInput.LOAD) || userInput.equals(eUserInput.QUIT)) {
+                switch (userInput) {
+                    case LOAD:
+                        loadXmlFile();
+                        break;
+                    case ExistLoans:
+                        PrintExistLoans();
+                        break;
+                    case ListCustomers:
+                        PrintExistCustomers();
+                        break;
+                    case Deposit:
+                        deposit();
+                        break;
+                    case Withdrawal:
+                        withdrawal();
+                        break;
+                    case LoansPlacement:
+                        loansPlacement();
+                        break;
+                    case moveYazForward:
+                        moveYazForward();
+                        break;
+                    case QUIT:
+                        userInput = InputOutput.quit();
+                        break;
+                }
+            } else {
+                InputOutput.unloadedSystem();
+            }
+            if (!userInput.equals(eUserInput.QUIT)) {
+                InputOutput.continueApp();
+            }
+        }
+        InputOutput.printMsg("Goodbye!");
+    }
+
+    private void moveYazForward() {
+    }
+
+    private void loansPlacement() {
+        InputOutput.printMsg("Please Chose The Customer You Want To Place The Loan For(Type The Index Of The Customer) ");
+        String customerID = InputOutput.chooseCustomerForLoan(engine.getCustomerAndBalanceList());
+        InputOutput.printMsg("Please Insert Amount Of Money To Invest: ");
+        int amount = InputOutput.getIntegerInput();
+        String category = InputOutput.chooseCategory(engine.getListOfCategory()); //opt
+        int interestParYaz = InputOutput.chooseInterestParYaz(); //opt
+        int minYazForLoan = InputOutput.chooseMinYazForLoan(); //opt
+        try {
+            InputOutput.printMsg("Please Choose Loan/Loans From The List If You Want Multiple Loans Please Type The Index Of The Loans with space (Ex:'1 2 5')");
+            InputOutput.printMsg("If You Chose Multiple Loans The Amount Will Be Divided Equally As Much As Possible.\n");
+
+            ArrayList<String> LoanNameToInvest = InputOutput.chooseLoanToInvest(engine.filterLoans(customerID, amount, category, interestParYaz, minYazForLoan));
+            InputOutput.printMsg("You Chose The Following Loans: ");
+            InputOutput.printMsg(LoanNameToInvest.toString());
+
+            if (engine.placementLoanByName(customerID, amount, LoanNameToInvest)) {
+                InputOutput.printMsg("You succeed Place The Loan/s :) ");
+            } else {
+                InputOutput.printMsg("Sorry Something Want Wrong :( please Try Again ");
+            }
+        } catch (Exception e) {
+            InputOutput.printMsg(e.getMessage());
+        }
+    }
+
+    private void deposit() {
+        InputOutput.printMsg("Please Chose The Customer You Want To Deposit The Money(insert by index of the customer): ");
+        String customerID = InputOutput.chooseNameFromListCustomers(engine.getCustomersNames(), eListCustomerType.Deposit);
+        InputOutput.printMsg("Please Insert Amount Of Money To Deposit: ");
+        int amount = InputOutput.getIntegerInput();
+        try {
+            if (engine.Deposit(customerID, amount)) {
+                InputOutput.printMsg("You succeed Deposit The Money :) ");
+            } else {
+                InputOutput.printMsg("Sorry Something Want Wrong With The Deposit :( please Try Again ");
+            }
+        } catch (IllegalArgumentException e) {
+            InputOutput.printMsg(e.getMessage());
+        }
+    }
+
+    private void withdrawal() {
+        InputOutput.printMsg("Please Chose The Customer You Want To Withdrawal The Money(insert by index of the customer): ");
+        String customerID = InputOutput.chooseNameFromListCustomers(engine.getCustomersNames(), eListCustomerType.Withdrawal);
+        InputOutput.printMsg("Please Insert Amount Of Money To Withdrawal: ");
+        int amount = InputOutput.getIntegerInput();
+        try {
+            if (engine.Withdrawal(customerID, amount)) {
+                InputOutput.printMsg("You succeed Withdrawal The Money :) ");
+            } else {
+                InputOutput.printMsg("Sorry Something Want Wrong With The Withdrawal :( please Try Again ");
+            }
+        } catch (IllegalArgumentException e) {
+            InputOutput.printMsg(e.getMessage());
         }
 
-        public void run() {
-            UserInput userInput = UserInput.INIT;
-            inputOutput.welcome();
+    }
 
-            while (userInput != UserInput.QUIT) {
-                userInput = inputOutput.mainMenu();
-                if (userInput.equals(UserInput.LOAD) || userInput.equals(UserInput.QUIT)) {
-                    switch (userInput) {
-                        case LOAD:
-                            loadXmlFile();
-                            break;
-                        case ExistLoans:
-                            PrintExistLoans();
-                            break;
-                        case ListCustomers:
-                            PrintExistCustomers();
-                            break;
-                        case Deposit:
-                            deposit();
-                            break;
-                        case Withdrawal:
-                            withdrawal();
-                            break;
-                        case LoansPlacement:
-                            loansPlacement();
-                            break;
-                        case QUIT:
-                            userInput = inputOutput.quit();
-                            break;
-                    }
+    private void PrintExistLoans() {
+        InputOutput.printMsg(engine.printExistLoans().toString());
+    }
+
+    private void PrintExistCustomers() {
+        InputOutput.printMsg(engine.printCustomers().toString());
+
+    }
+
+
+    private void loadXmlFile() {
+        String path = InputOutput.getXmlPath();
+        if (path == null) {
+            InputOutput.failedLoadSystem("The file path contains invalid letters.");
+            return;
+        }
+        if (!InputOutput.isQuit(path)) {
+            try {
+                if (!Files.exists(Paths.get(path))) {
+                    InputOutput.failedLoadSystem("The File you try to load is not exist.");
+                    return;
+                } else if (!Files.probeContentType(Paths.get(path)).equals("application/xml")) {
+                    InputOutput.failedLoadSystem("The File you entered is not an xml file.");
+                    return;
                 } else {
-                    inputOutput.unloadedSystem();
+                    engine.buildFromXML(path);
+                    InputOutput.successLoading();
                 }
-                if (!userInput.equals(UserInput.QUIT)) {
-                    inputOutput.continueApp();
-                }
-            }
-            inputOutput.printMsg("Goodbye!");
-        }
-
-        private void loansPlacement() {
-        }
-
-        private void deposit() {
-            int amount = inputOutput. getIntegerInput();
-            engine.Deposit(amount);
-        }
-        private void withdrawal() {
-            int amount = inputOutput. getIntegerInput();
-            engine.Withdrawal(amount);
-        }
-
-        private void PrintExistLoans() {
-            engine.printExistLoans();
-        }
-        private void PrintExistCustomers() {
-            engine.printCustomers();
-        }
-
-
-
-        private void loadXmlFile() {
-            String path = inputOutput.getXmlPath();
-            if (path == null) {
-                inputOutput.failedLoadSystem("The file path contains invalid letters.");
-                return;
-            }
-            if (!inputOutput.isQuit(path)) {
-                try {
-                    if (!Files.exists(Paths.get(path))) {
-                        inputOutput.failedLoadSystem("The File you try to load is not exist.");
-                        return;
-                    } else if (!Files.probeContentType(Paths.get(path)).equals("text/xml")) {
-                        inputOutput.failedLoadSystem("The File you entered is not an xml file.");
-                        return;
-                    } else {
-                        engine.buildFromXML(path);
-                        inputOutput.successLoading();
-                    }
-                } catch (FileNotFoundException ex) {
-                    inputOutput.failedLoadSystem("Wrong file path - the file you entered is not exist, try again.");
-                } catch (Exception e) {
-                    inputOutput.failedLoadSystem(e.getMessage());
-                }
+            } catch (FileNotFoundException ex) {
+                InputOutput.failedLoadSystem("Wrong file path - the file you entered is not exist, try again.");
+            } catch (Exception e) {
+                InputOutput.failedLoadSystem(e.getMessage());
             }
         }
+    }
 
 }

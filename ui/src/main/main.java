@@ -1,10 +1,16 @@
 package main;
 
-import IO.inputOutput;
+import app.ABSapp;
+import engine.ABSEngine;
 
 public class main {
 
     public static void main(String[] args) {
-        inputOutput.mainMenu();
+
+        //e.buildFromXML("/Users/nporat/repositories/java_course/ABS/engine/src/resources/ex1-big.xml");
+        ABSapp app = new ABSapp();
+        app.init(new ABSEngine());
+        app.run();
     }
 }
+
