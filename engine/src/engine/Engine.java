@@ -18,4 +18,5 @@ public interface Engine {
     Map<String,String> getCustomerAndBalanceList();
     List<String> getListOfCategory();
     boolean placementLoanByName(String customerID, int amount, ArrayList<String> loanNameToInvest) throws Exception;
+    ArrayList<String> advanceYazForward();//advanceOne Yaz
 }

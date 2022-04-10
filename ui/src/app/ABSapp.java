@@ -22,7 +22,6 @@ public class ABSapp {
     public void run() {
         eUserInput userInput = eUserInput.INIT;
         InputOutput.welcome();
-
         while (userInput != eUserInput.QUIT) {
 
             userInput = InputOutput.mainMenu(engine.getCurrentTime());
@@ -64,6 +63,20 @@ public class ABSapp {
     }
 
     private void moveYazForward() {
+        int beforeYaz = engine.getCurrentTime();
+        InputOutput.printMsg("Hey! I Going To Move The Clock With One Yaz Forward");
+        try {
+            ArrayList<String> returnValueFromAdvance = engine.advanceYazForward();
+            InputOutput.printMsg("You Succeed Move The Yaz Forward :) ");
+            InputOutput.printMsg("The Yaz Before The Action Was - " + beforeYaz);
+            InputOutput.printMsg("The Current Yaz is - " + engine.getCurrentTime());
+            if(returnValueFromAdvance.size()>0) {
+                InputOutput.printMsg("Here Is The List Of Actions Was Execute Part Of The Yaz Update: ");
+                InputOutput.printMsg(returnValueFromAdvance.toString());
+            }
+        } catch (IllegalArgumentException e) {
+            InputOutput.printMsg(e.getMessage());
+        }
     }
 
     private void loansPlacement() {
@@ -83,7 +96,7 @@ public class ABSapp {
             InputOutput.printMsg(LoanNameToInvest.toString());
 
             if (engine.placementLoanByName(customerID, amount, LoanNameToInvest)) {
-                InputOutput.printMsg("You succeed Place The Loan/s :) ");
+                InputOutput.printMsg("You succeed Place The Loan/s, Have Good Day :) ");
             } else {
                 InputOutput.printMsg("Sorry Something Want Wrong :( please Try Again ");
             }
@@ -133,7 +146,6 @@ public class ABSapp {
         InputOutput.printMsg(engine.printCustomers().toString());
 
     }
-
 
     private void loadXmlFile() {
         String path = InputOutput.getXmlPath();

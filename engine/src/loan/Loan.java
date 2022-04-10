@@ -1,6 +1,10 @@
 package loan;
 
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+
 public class Loan {
     ///todo classs infos
     protected final String id;
@@ -33,18 +37,11 @@ public class Loan {
     public Integer getCapital() {
         return capital;
     }
-
     public String getId() {
         return id;
     }
-
     public LoanStatus getLoanStatus() {
         return status;
-    }
-
-    public int getNextPaymentAmount() {
-        int foundParYaz = this.capital / this.paysEveryYaz;
-        return foundParYaz * (this.interestPerPayment / 100);
     }
 
     public Integer getTotalWorthLoan() {
@@ -74,4 +71,5 @@ public class Loan {
                 ", TotalWorthLoan= " + getTotalWorthLoan() +
                 ", status= ";
     }
+
 }

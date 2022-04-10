@@ -16,9 +16,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ABSEngine implements Engine {
 
@@ -54,7 +57,7 @@ public class ABSEngine implements Engine {
                 outM.append("Next yaz to pay is= ");
                 outM.append(currLoan.getNextYazPayment());
                 outM.append("Pay Amount(fund+interest)= ");
-                outM.append(currLoan.getNextPaymentAmount());
+                outM.append(currLoan.calcPayment());
                 break;
             case Pending:
                 outM.append("Remained amount of money to collect= ");
@@ -69,7 +72,7 @@ public class ABSEngine implements Engine {
                 outM.append("Number of UnPayments= ");
                 outM.append(currLoan.getNumUnPayments());
                 outM.append("In Total Worth= ");
-                outM.append(currLoan.getNumUnPaymentsWorth());
+                outM.append(currLoan.getUnPaymentsWorth());
                 break;
 
         }
@@ -110,6 +113,9 @@ public class ABSEngine implements Engine {
 
         for (String loanName : loansNameToInvest) {
             BankLoan loan = loans.get(loanName);
+            if (loan.getOwner().equals(investor.getCustomerName())) {
+            throw new IllegalArgumentException("\nSorry You Can Invest In Yourself, Please Start The Process Again");
+            }
 
             if (!investor.withdrawal(amountParLoan)) {
                 isPlacement = false;
@@ -118,20 +124,82 @@ public class ABSEngine implements Engine {
                 investor.getInvestedLoans().put(loanName, loan);
                 loan.getLenders().put(investor, amountParLoan);
                 loan.addToPaidFund(amountParLoan);
+
             }
             if (loan.getLoanStatus() == LoanStatus.Active) {
                 Customer borrow = this.customers.get(loan.getOwner());
-                if (!borrow.deposit(loan.getCapital())) {
+                if (!fromPendingToActive(loan, borrow)) {
                     isPlacement = false;
                     break;
-                } else {
-                    borrow.getMyLoans().put(loanName, loan);
                 }
             }
         }
         return isPlacement;
 
     }
+
+    public boolean fromPendingToActive(BankLoan loan, Customer borrow) {
+        boolean isSet = true;
+        if (!borrow.deposit(loan.getCapital())) {
+            isSet = false;
+
+        } else {
+            borrow.getMyLoans().put(loan.getId(), loan);
+        }
+        return isSet;
+    }
+
+    @Override
+    public ArrayList<String> advanceYazForward() {
+        ArrayList<String> actionMassage = new ArrayList<>();
+       ArrayList<BankLoan> filteredLoans =(ArrayList<BankLoan>) loans.values().stream().
+               filter(p -> p.getLoanStatus() == LoanStatus.Active || p.getLoanStatus() == LoanStatus.InRisk )
+               .collect(Collectors.toList());
+
+
+        Collections.sort(filteredLoans, new Comparator<BankLoan>() {
+            @Override
+            public int compare(BankLoan loan1, BankLoan loan2) {
+                if (loan1.getYazActivated() < loan2.getYazActivated())
+                    return loan1.getYazActivated() - loan2.getYazActivated();
+                else if (loan1.getYazActivated() == loan2.getYazActivated()) {
+                    return loan1.getTotalPayForNextPayment() - loan2.getTotalPayForNextPayment();
+                } else {
+                    return loan1.getTotalYazTime() - loan2.getTotalYazTime();
+                }
+            }
+        });
+
+        for (BankLoan loan : filteredLoans) {
+            if (!paymentDay(loan)) {
+                throw new IllegalArgumentException("Payment for each loan is made in full or not made at all");
+            } else
+                actionMassage.add("Pay For '" + loan.getId() + "' Was Execute Successfully By " + loan.getOwner());
+        }
+
+        this.yaz.moveTimeForward(1);
+
+        return actionMassage;
+    }
+
+    private boolean paymentDay(BankLoan loan) {
+        boolean isPayLoanActivate = true;
+        Customer borrow = customers.get(loan.getOwner());
+        int amountToPay = loan.getMoneyToPay();
+        if(amountToPay != -1)//if == -1, we know it is no pay day Now
+        {
+            if (amountToPay > borrow.getBalance()) {
+                isPayLoanActivate = false;
+                loan.setLoanInRisk();
+                throw new IllegalArgumentException("The Owner Not Have Enough Money In The Account, Add This Pay To UnPaid Payments");
+            } else {
+                loan.payLoan(borrow.withdrawal(amountToPay)); // todo double check of in risk CAN Remove IF Want
+                isPayLoanActivate = true;
+            }
+        }
+      return isPayLoanActivate;
+    }
+
 
     public void setCustomers(Map<String, Customer> customers) {
         this.customers = customers;
