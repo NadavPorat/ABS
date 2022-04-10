@@ -240,6 +240,7 @@ public class ABSEngine implements Engine {
     //TODO improve the filters maybe Streams
     @Override
     public ArrayList<String> filterLoans(String customerID, int amount, String category, int interestParYaz, int minYazForLoan) {
+
         Map<String, BankLoan> filteredLoans = new HashMap<>();
         ArrayList<String> returnList = new ArrayList<>();
         for (BankLoan loan : loans.values()) {

@@ -42,7 +42,7 @@ public class ABSapp {
                     case Withdrawal:
                         withdrawal();
                         break;
-                    case LoansPlacement:
+                    case InvestmentPlacement:
                         loansPlacement();
                         break;
                     case moveYazForward:
@@ -80,14 +80,19 @@ public class ABSapp {
     }
 
     private void loansPlacement() {
-        InputOutput.printMsg("Please Chose The Customer You Want To Place The Loan For(Type The Index Of The Customer) ");
-        String customerID = InputOutput.chooseCustomerForLoan(engine.getCustomerAndBalanceList());
-        InputOutput.printMsg("Please Insert Amount Of Money To Invest: ");
-        int amount = InputOutput.getIntegerInput();
-        String category = InputOutput.chooseCategory(engine.getListOfCategory()); //opt
-        int interestParYaz = InputOutput.chooseInterestParYaz(); //opt
-        int minYazForLoan = InputOutput.chooseMinYazForLoan(); //opt
+
         try {
+            InputOutput.printMsg("Please Chose The Customer You Want To Place The Loan For(Type The Index Of The Customer) ");
+            String customerID = InputOutput.chooseCustomerForLoan(engine.getCustomerAndBalanceList());
+            InputOutput.printMsg("Please Insert Amount Of Money To Invest: ");
+            int amount = InputOutput.getIntegerInput();
+            int sum = Integer.parseInt(engine.getCustomerAndBalanceList().get(customerID));
+            if(sum< amount) {
+                throw new IllegalArgumentException("You Can Invest More Then Your Balance!, Please Try Again");
+            }
+            String category = InputOutput.chooseCategory(engine.getListOfCategory()); //opt
+            int interestParYaz = InputOutput.chooseInterestParYaz(); //opt
+            int minYazForLoan = InputOutput.chooseMinYazForLoan(); //opt
             InputOutput.printMsg("Please Choose Loan/Loans From The List If You Want Multiple Loans Please Type The Index Of The Loans with space (Ex:'1 2 5')");
             InputOutput.printMsg("If You Chose Multiple Loans The Amount Will Be Divided Equally As Much As Possible.\n");
 
@@ -158,12 +163,15 @@ public class ABSapp {
                 if (!Files.exists(Paths.get(path))) {
                     InputOutput.failedLoadSystem("The File you try to load is not exist.");
                     return;
-                } else if (!Files.probeContentType(Paths.get(path)).equals("application/xml")) {
-                    InputOutput.failedLoadSystem("The File you entered is not an xml file.");
-                    return;
                 } else {
-                    engine.buildFromXML(path);
-                    InputOutput.successLoading();
+                    String file_type = Files.probeContentType(Paths.get(path));
+                    if (!(file_type.equals("application/xml") || file_type.equals("text/xml"))) {
+                        InputOutput.failedLoadSystem("The File you entered is not an xml file.");
+                        return;
+                    } else {
+                        engine.buildFromXML(path);
+                        InputOutput.successLoading();
+                    }
                 }
             } catch (FileNotFoundException ex) {
                 InputOutput.failedLoadSystem("Wrong file path - the file you entered is not exist, try again.");

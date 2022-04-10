@@ -23,8 +23,8 @@ public class InputOutput {
                 " 3. Display Exist Customers in the system\n" +
                 " 4. Deposit Money By Name\n" +
                 " 5. Withdrawal Money By Name\n" +
-                " 6. Loans Placement\n" +
-                " 7. TimeSet\n" +
+                " 6. Investment In Loans Placement\n" +
+                " 7. Move Yaz Forward\n" +
                 " 8. QUIT\n");
         System.out.println("(-- At each stage of the program, pressing '0' will return you to the main menu --)");
         System.out.print("Please choose an option: ");
