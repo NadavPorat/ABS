@@ -12,25 +12,22 @@ import java.util.stream.Collectors;
 
 public class BankLoan extends Loan {
     private final ITimeUnit yaz = TimeUnitABS.TimeUnitABS();
-
+    private final int ExpectedTotalInterest;
     //info time loan
     private int yazActivated;
     private int lastYazPaid;
     private int closeYaz;
-
     //dynamic
     private int currentFinancingForLoan;
     private int timeLeftTOLoan;
     private Map<Customer, Integer> lenders;
     private ArrayList<Payment> payments;
-
     ///customer side
     private int paidInterest;
     private int remainingInterest;
     private int remainingFund;
     private int paidFund;
     private int sumExpectedPayForLoan;
-    private int ExpectedTotalInterest;
 
 
     public BankLoan(String owner, String category, int capital, int totalYazTime, int paysEveryYaz, int interestPerPayment, String id) {
@@ -39,11 +36,11 @@ public class BankLoan extends Loan {
         payments = new ArrayList<>();
         setPayments();
         sumExpectedPayForLoan = 0;
-        ExpectedTotalInterest= calcTotalInterestExp();
+        ExpectedTotalInterest = calcTotalInterestExp();
         timeLeftTOLoan = yaz.getCurrentTime() + totalYazTime;
     }
 
-    public void setTimeLeftTOLoan() {
+    public void reductionTimeLeftTOLoan() {
         this.timeLeftTOLoan = timeLeftTOLoan - 1;
     }
 
@@ -57,21 +54,24 @@ public class BankLoan extends Loan {
     }
 
     public int getTotalPayForNextPayment() {
-        int amountNextPay= -1;
+        int amountNextPay = -1;
         for (Payment pay : payments) {
-            if(!pay.isPaid)
-            {
-                amountNextPay= pay.totalPay;
+            if (!pay.isPaid) {
+                amountNextPay = pay.totalPay;
                 break;
             }
         }
-        return  amountNextPay;
+        return amountNextPay;
     }
 
     public int getMoneyToPay() {
         for (Payment pay : payments) {
-            if (pay.payYaz == yaz.getCurrentTime()) {
+            if (pay.payYaz == yaz.getCurrentTime() && !pay.isPaid ) {
                 return pay.totalPay;
+            }
+            if(this.status == LoanStatus.InRisk && pay.shouldBePaid)
+            {
+               return pay.totalPay;
             }
         }
         return -1; //if is now payment day sign with -1
@@ -118,34 +118,20 @@ public class BankLoan extends Loan {
 
     private String printLenders() {
         if (lenders != null) {
-            String out = "{Lenders List is:";
+            StringBuilder out = new StringBuilder("{Lenders List is:");
             int index = 1;
-            out += "{";
+            out.append("{");
             for (Customer keys : lenders.keySet()) {
-                out += index + "." + keys.getCustomerName() + " Invested With= " + lenders.get(keys) + ' ';
+                out.append(index).append(".").append(keys.getCustomerName()).append(" Invested With= ").append(lenders.get(keys)).append(' ');
                 index++;
 
             }
-            out += "}";
+            out.append("}");
 
-            return out;
+            return out.toString();
         } else {
             return "No Lenders";
         }
-
-    }
-
-    private boolean addMoneyToFinancing(int moneyAmount) {
-        boolean isAddMoney = false;
-        if (moneyAmount > 0) {
-            this.currentFinancingForLoan += moneyAmount;
-            isAddMoney = true;
-            if (remainedMoneyToPending() == 0) {
-                //TODO move from panding to active
-            }
-        }
-
-        return isAddMoney;
 
     }
 
@@ -195,8 +181,8 @@ public class BankLoan extends Loan {
         }
 
         out.append(" }");
-        out.append("Number Of UnPaid Payments is = " + countUnPaid);
-        out.append(", Total Sum Of The UnPaid Payments is = " + totalUnPay);
+        out.append("Number Of UnPaid Payments is = ").append(countUnPaid);
+        out.append(", Total Sum Of The UnPaid Payments is = ").append(totalUnPay);
         return out.toString();
     }
 
@@ -228,7 +214,7 @@ public class BankLoan extends Loan {
 
     @Override
     public String toString() {
-        String toStringStatus = null;
+        String toStringStatus;
         switch (this.status) {
             case New:
                 toStringStatus = "This is New Loan";
@@ -319,34 +305,56 @@ public class BankLoan extends Loan {
 
         }
     }
+
     public int calcTotalInterestExp() {
         DecimalFormat df = new DecimalFormat("0.00");
         double interestParsToDouble = Double.parseDouble(df.format(this.interestPerPayment));
         double interestPercentage = (interestParsToDouble / 100);
         double interestToPay = this.capital * interestPercentage;
 
-        return (int)interestToPay;
+        return (int) interestToPay;
     }
 
     public void payLoan(boolean isPaidByCustomer) {
-        Payment pay =  payments.stream().filter(x -> yaz.getCurrentTime() == (x.payYaz))
+        Payment pay = payments.stream().filter(x -> yaz.getCurrentTime() == (x.payYaz))
                 .findAny()
                 .orElse(null);
 
-            if(pay!= null) {
-                if (isPaidByCustomer) {
-                    lastYazPaid = yaz.getCurrentTime();
-                    paidFund += pay.fundCut;
-                    paidInterest += pay.interestCut;
-                    remainingInterest = ExpectedTotalInterest - paidInterest;
-                    remainingFund = capital - paidFund;
-                    pay.setPaid(true);
-                } else {
-                    setLoanInRisk();
+        if (pay != null) {
+            if (isPaidByCustomer) {
+                updateDynamicPayFiled(pay);
+                if(payForLenders(pay) && status==LoanStatus.InRisk)
+                {
+                    this.status = LoanStatus.Active;
+                }
+                pay.setPaid(true);
+                if (remainingInterest == 0 && remainingFund == 0 ) { //done to pay he Loan
+                    this.status = LoanStatus.Finished;
+                    this.closeYaz = lastYazPaid;
                 }
             }
-            else
-                throw new IllegalArgumentException("Something Want Wrong with The Pay, Please check and run again");
+        } else
+            throw new IllegalArgumentException("Something Want Wrong with The Pay, Please check and run again");
+    }
+
+    private boolean payForLenders(Payment pay) {//Lenders
+            boolean isPaidToAll = false;
+            int moneyParLender = pay.totalPay/ lenders.keySet().size();
+
+            for(Customer customer: lenders.keySet())
+            {
+                isPaidToAll = customer.deposit(moneyParLender);
+            }
+            return isPaidToAll;
+    }
+
+    private void updateDynamicPayFiled(Payment pay) {
+        lastYazPaid = yaz.getCurrentTime();
+        paidFund += pay.fundCut;
+        paidInterest += pay.interestCut;
+        remainingInterest = ExpectedTotalInterest - paidInterest;
+        remainingFund = capital - paidFund;
+        pay.isPaid = true;
     }
 
 

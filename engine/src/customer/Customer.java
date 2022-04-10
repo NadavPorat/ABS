@@ -26,7 +26,6 @@ public class Customer implements ICustomer {
             this.balance = balance;
             this.customerName = customerName;
         } else {
-            //TODO exeptions for customer
             throw new IllegalArgumentException("Customer cant be with negative balance");
         }
         accountMovements = new ArrayList<>();
@@ -45,7 +44,7 @@ public class Customer implements ICustomer {
 
     @Override
     public boolean withdrawal(int amount) {
-        boolean isWithdrawal = false;
+        boolean isWithdrawal;
         int balance = this.getBalance();
         int expectedBalance = balance - amount;
 
@@ -65,7 +64,7 @@ public class Customer implements ICustomer {
 
     @Override
     public boolean deposit(int amount) {
-        boolean isDeposit = false;
+        boolean isDeposit ;
         int balance = this.getBalance();
         int expectedBalance = balance + amount;
         if (amount < 0) {
@@ -94,6 +93,7 @@ public class Customer implements ICustomer {
         int index = 1;
         StringBuilder outMessage = new StringBuilder();
         for (AccountMovement movement : accountMovements) {
+            outMessage.append(" ");
             outMessage.append(index);
             outMessage.append(". ");
             outMessage.append(movement.toString());
@@ -106,9 +106,9 @@ public class Customer implements ICustomer {
 
     @Override
     public String toString() {
-        String movementsToString = "";
-        String myLoansToString = "";
-        String InvestedLoansToString = "";
+        String movementsToString;
+        String myLoansToString ;
+        String InvestedLoansToString;
         int index = 1;
         if (accountMovements != null) {
             movementsToString = printAccountMovements().toString();

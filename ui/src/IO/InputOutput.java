@@ -37,7 +37,7 @@ public class InputOutput {
         int input;
         do {
             input = getIntegerInput();
-            if (input >= startRange && input <= endRange) {
+            if (input >= startRange && input <= endRange || input ==0) {
                 validRange = true;
             } else {
                 System.out.println("Wrong input - you entered a invalid choice, try again: ");
@@ -137,9 +137,10 @@ public class InputOutput {
         scanner.nextLine();
     }
 
+
     public static boolean isQuit(String name) {
         if (name.equals(eUserInput.QUIT.toString())) {
-            InputOutput.printMsg("Going back to main menu.");
+            InputOutput.printMsg("You Typed '0' So Going back to main menu!");
             return true;
         }
         return false;
@@ -163,54 +164,76 @@ public class InputOutput {
 
     public static String chooseNameFromListCustomers(ArrayList<String> customers, eListCustomerType listType) {
         for (String str : customers) {
-            System.out.println(customers.indexOf(str) + ". " + str);
+            System.out.println((customers.indexOf(str)+1)  + ". " + str);
 
         }
-        int input = getIntegerInRange(0, customers.size() - 1);
+        int input = getIntegerInRange(0 , customers.size());
+        if(input == 0)
+        {
+            InputOutput.isQuit(eUserInput.QUIT.toString());
+            return null;
+        }else {
+            input--;
+            String name = customers.get(input);
+            String answer;
+            do {
+                System.out.println("Are You Sure You Want To " + listType.toString() + " " + name + " Account ? (Y/N)");
+                answer = getStringInput("answer");
+                if (!answer.equals("Y")) {
+                    System.out.println("Ok Lets Try Again, Please Choosing The Correct Customer: ");
+                    input = getIntegerInRange(0, customers.size());
+                    input--;
+                    name = customers.get(input);
+                }
+            } while (!answer.equals("Y"));
+            return name;
+        }
 
-        String name = customers.get(input);
-        String answer;
-        do {
-            System.out.println("Are You Sure You Want To " + listType.toString() + " " + name + " Account ? (Y/N)");
-            answer = getStringInput("answer");
-            if (!answer.equals("Y")) {
-                System.out.println("Ok Lets Try Again, Please Choosing The Correct Customer: ");
-                input = getIntegerInRange(0, customers.size() - 1);
-                name = customers.get(input);
-            }
-        } while (!answer.equals("Y"));
 
-        return name;
 
 
     }
 
-    public static String chooseCustomerForLoan(Map<String, String> customerAndBalanceMap) {
+    public static String chooseCustomerForInvestLoan(Map<String, String> customerAndBalanceMap) {
         ArrayList<String> nameList = new ArrayList<>(customerAndBalanceMap.keySet());
         for (String customerName : nameList) {
 
-            System.out.println(nameList.indexOf(customerName) + ". " + customerName + ", Balance: " + customerAndBalanceMap.get(customerName));
+            System.out.println((nameList.indexOf(customerName)+1) + ". " + customerName + ", Balance: " + customerAndBalanceMap.get(customerName));
         }
-        int input = getIntegerInRange(0, nameList.size() - 1);
-        String name = nameList.get(input);
-        String answer;
-        do {
-            System.out.println("Are You Sure you Want To Choose " + name + " ? (Y/N)");
-            answer = getStringInput("answer");
-            if (!answer.equals("Y")) {
-                System.out.println("Ok Lets Try Again, Please Choosing The Correct Customer: ");
-                input = getIntegerInRange(0, nameList.size() - 1);
-                name = nameList.get(input);
-            }
-        } while (!answer.equals("Y"));
-        return name;
+        int input = getIntegerInRange(0, nameList.size());
+        if(input == 0)
+        {
+            InputOutput.isQuit(eUserInput.QUIT.toString());
+            return null;
+        }
+        else {
+            input--;
+            String name = nameList.get(input);
+            String answer;
+            do {
+                System.out.println("Are You Sure you Want To Choose " + name + " ? (Y/N)");
+                answer = getStringInput("answer");
+                if (!answer.equals("Y")) {
+                    System.out.println("Ok Lets Try Again, Please Choosing The Correct Customer: ");
+                    input = getIntegerInRange(0, nameList.size());
+                    if(input == 0)
+                    {
+                        InputOutput.isQuit(eUserInput.QUIT.toString());
+                        return null;
+                    }
+                    input--;
+                    name = nameList.get(input);
+                }
+            } while (!answer.equals("Y"));
+            return name;
+        }
     }
 
     public static String chooseCategory(List<String> listOfCategory) {
         String choseUser = "anyCategory";
         String ifSkip;
+        System.out.println("Are You Want To Choose Category For The Loan Y/N (capital letters):  ");
         do {
-            System.out.println("Are You Want To Choose Category For The Loan Y/N (capital letters):  ");
             ifSkip = getStringInput("answer");
             if (ifSkip.equals("Y") || ifSkip.equals("N")) {
                 break;
@@ -220,21 +243,32 @@ public class InputOutput {
         } while (true);
 
         if (ifSkip.equals("Y")) {
+            System.out.println("Please Choose Category Form The List:  ");
             for (String category : listOfCategory) {
-                System.out.println(listOfCategory.indexOf(category) + ". " + category);
+                System.out.println((listOfCategory.indexOf(category)+1) + ". " + category);
 
             }
-            int input = getIntegerInRange(0, listOfCategory.size() - 1);
+            int input = getIntegerInRange(0, listOfCategory.size());
+            if(input == 0)
+            {
+                InputOutput.isQuit(eUserInput.QUIT.toString());
+                return null;
+            }
 
-            choseUser = listOfCategory.get(input);
+            choseUser = listOfCategory.get(input-1);
             String answer;
             do {
-                System.out.println("Are You Sure You Want To " + choseUser.toString() + " Category? (Y/N)");
+                System.out.println("Are You Sure You Want To '" + choseUser + "' Category? (Y/N)");
                 answer = getStringInput("answer");
                 if (!answer.equals("Y")) {
-                    System.out.println("Ok Let's Try Again, Please Choosing The Correct Customer: ");
-                    input = getIntegerInRange(0, listOfCategory.size() - 1);
-                    choseUser = listOfCategory.get(input);
+                    System.out.println("Ok Let's Try Again, Please Choosing The Correct Category: ");
+                    input = getIntegerInRange(0, listOfCategory.size());
+                    if(input == 0)
+                    {
+                        InputOutput.isQuit(eUserInput.QUIT.toString());
+                        return null;
+                    }
+                    choseUser = listOfCategory.get(input-1);
                 }
             } while (!answer.equals("Y"));
         }
@@ -246,8 +280,8 @@ public class InputOutput {
     public static int chooseInterestParYaz() {
         int choseUser = -1;
         String ifSkip;
+        System.out.println("Are You Want To Choose Interest Par Yaz For The Loan Y/N (capital letters):  ");
         do {
-            System.out.println("Are You Want To Choose Interest Par Yaz For The Loan Y/N (capital letters):  ");
             ifSkip = getStringInput("answer");
             if (ifSkip.equals("Y") || ifSkip.equals("N")) {
                 break;
@@ -258,14 +292,14 @@ public class InputOutput {
 
 
         if (ifSkip.equals("Y")) {
-            System.out.println("Type Interest Par Yaz in numeric between (0-100]:  ");
+            System.out.println("Typed Interest Par Yaz in numeric between (0-100]:  ");
             int input = getIntegerInput();
             String answer;
+            System.out.println("Are You Sure You Want To " + input + " Interest Par Yaz? (Y/N)");
             do {
-                System.out.println("Are You Sure You Want To " + input + " Interest Par Yaz? (Y/N)");
                 answer = getStringInput("answer");
                 if (!answer.equals("Y")) {
-                    System.out.println("Ok Let's Try Again, Please Choosing The Correct Customer: ");
+                    System.out.println("Ok Let's Try Again, Please Typed Interest Par Yaz in numeric between (0-100]: ");
                     input = getIntegerInput();
                 }
                 choseUser = input;
@@ -277,8 +311,8 @@ public class InputOutput {
     public static int chooseMinYazForLoan() {
         int choseUser = -1;
         String ifSkip;
+        System.out.println("Are You Want To Choose Min Yaz For The Loan Y/N (capital letters):  ");
         do {
-            System.out.println("Are You Want To Choose Min Yaz For The Loan Y/N (capital letters):  ");
             ifSkip = getStringInput("answer");
             if (ifSkip.equals("Y") || ifSkip.equals("N")) {
                 break;
@@ -288,14 +322,14 @@ public class InputOutput {
         } while (true);
 
         if (ifSkip.equals("Y")) {
-            System.out.println("Type Min Yaz For The Loan(in numeric):  ");
+            System.out.println("Typed Min Yaz For The Loan(positive number):  ");
             int input = getIntegerInput();
             String answer;
             do {
-                System.out.println("Are You Sure You Want To " + input + " Interest Par Yaz? (Y/N)");
+                System.out.println("Are You Sure You Want To " + input + " Min Yaz For The Loan? (Y/N)");
                 answer = getStringInput("answer");
                 if (!answer.equals("Y")) {
-                    System.out.println("Let's Try Again, Please Choosing The Correct Customer: ");
+                    System.out.println("Ok Let's Try Again, Please Typed Min Yaz For The Loan(positive number): ");
                     input = getIntegerInput();
                 }
                 choseUser = input;
@@ -308,7 +342,7 @@ public class InputOutput {
         String userInput;
         Scanner scanner = new Scanner(System.in);
 
-        ArrayList<Integer> choseLoansIndex = new ArrayList<Integer>();
+        ArrayList<Integer> choseLoansIndex = new ArrayList<>();
         boolean valid = true;
         do {
             userInput = scanner.nextLine();
@@ -332,18 +366,24 @@ public class InputOutput {
         String loanName;
         ArrayList<String> nameOfChoosingLoans = new ArrayList<>();
         for (String loan : filterLoans) {
-            System.out.println(filterLoans.indexOf(loan) + ". " + loan);
+            System.out.println((filterLoans.indexOf(loan)+1) + ". " + loan);
         }
-        ArrayList<Integer> choseLoansIndex = getListLoansFromUser(0, filterLoans.size() - 1);
+        ArrayList<Integer> choseLoansIndex = getListLoansFromUser(0, filterLoans.size());
+        if(choseLoansIndex.contains(0))
+        {
+            InputOutput.isQuit(eUserInput.QUIT.toString());
+            return null;
+        }
+        else {
 
-        for (Integer index : choseLoansIndex) {
-            loanName = filterLoans.get(index).split(",")[0];
-            loanName = loanName.substring(8);
-            loanName = loanName.substring(1, loanName.length()-1);
-            nameOfChoosingLoans.add(loanName);
+            for (Integer index : choseLoansIndex) {
+                loanName = filterLoans.get(index).split(",")[0];
+                loanName = loanName.substring(8);
+                loanName = loanName.substring(1, loanName.length() - 1);
+                nameOfChoosingLoans.add(loanName);
+            }
+            return nameOfChoosingLoans;
         }
-        return nameOfChoosingLoans;
     }
 }
-//TODO what if user didnt choose any
 

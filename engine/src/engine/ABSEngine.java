@@ -21,13 +21,11 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class ABSEngine implements Engine {
 
     private static Map<String, BankLoan> loans;
     private final ITimeUnit yaz;
-    //todo filter
     private Categories categories;
     private Map<String, Customer> customers;
     private boolean isBuildFromFile;
@@ -105,23 +103,32 @@ public class ABSEngine implements Engine {
     }
 
     @Override
-    public boolean placementLoanByName(String customerID, int amount, ArrayList<String> loansNameToInvest) throws Exception {
+    public boolean placementLoanByName(String customerID, int amount, ArrayList<String> loansNameToInvest) {
         boolean isPlacement = true;
         Customer investor = customers.get(customerID);
+        ArrayList<BankLoan> loansToInvest=new ArrayList<>();
         int amountParLoan = amount / loansNameToInvest.size();
-
+        int totalMoneyRequired  =0;
 
         for (String loanName : loansNameToInvest) {
             BankLoan loan = loans.get(loanName);
             if (loan.getOwner().equals(investor.getCustomerName())) {
-            throw new IllegalArgumentException("\nSorry You Can Invest In Yourself, Please Start The Process Again");
+                throw new IllegalArgumentException("\nSorry You Can Invest In Yourself, Please Start The Process Again");
+            } else {
+                totalMoneyRequired += loan.remainedMoneyToPending();
+                loansToInvest.add(loan);
             }
-
+        }
+            if(totalMoneyRequired<amount) {
+                throw new IllegalArgumentException("\nSorry You Can Invest With More Money That The Loans Required, Please Start The Process Again");
+            }
+        for (BankLoan loan: loansToInvest)
+        {
             if (!investor.withdrawal(amountParLoan)) {
                 isPlacement = false;
                 break;
             } else {
-                investor.getInvestedLoans().put(loanName, loan);
+                investor.getInvestedLoans().put(loan.getId(), loan);
                 loan.getLenders().put(investor, amountParLoan);
                 loan.addToPaidFund(amountParLoan);
 
@@ -130,19 +137,17 @@ public class ABSEngine implements Engine {
                 Customer borrow = this.customers.get(loan.getOwner());
                 if (!fromPendingToActive(loan, borrow)) {
                     isPlacement = false;
-                    break;
+                    throw new IllegalArgumentException("\nSorry The Deposit To The Borrow Didnt Execute,Check Why And Please Start The Process Again");
                 }
             }
         }
         return isPlacement;
-
     }
 
     public boolean fromPendingToActive(BankLoan loan, Customer borrow) {
         boolean isSet = true;
         if (!borrow.deposit(loan.getCapital())) {
             isSet = false;
-
         } else {
             borrow.getMyLoans().put(loan.getId(), loan);
         }
@@ -152,11 +157,15 @@ public class ABSEngine implements Engine {
     @Override
     public ArrayList<String> advanceYazForward() {
         ArrayList<String> actionMassage = new ArrayList<>();
-       ArrayList<BankLoan> filteredLoans =(ArrayList<BankLoan>) loans.values().stream().
-               filter(p -> p.getLoanStatus() == LoanStatus.Active || p.getLoanStatus() == LoanStatus.InRisk )
-               .collect(Collectors.toList());
-
-
+       ArrayList<BankLoan> filteredLoans = new ArrayList<>();
+       for (BankLoan loan: loans.values())
+       {
+           loan.reductionTimeLeftTOLoan();
+           if(loan.getLoanStatus() == LoanStatus.Active || loan.getLoanStatus() == LoanStatus.InRisk )
+           {
+               filteredLoans.add(loan);
+           }
+       }
         Collections.sort(filteredLoans, new Comparator<BankLoan>() {
             @Override
             public int compare(BankLoan loan1, BankLoan loan2) {
@@ -193,7 +202,7 @@ public class ABSEngine implements Engine {
                 loan.setLoanInRisk();
                 throw new IllegalArgumentException("The Owner Not Have Enough Money In The Account, Add This Pay To UnPaid Payments");
             } else {
-                loan.payLoan(borrow.withdrawal(amountToPay)); // todo double check of in risk CAN Remove IF Want
+                loan.payLoan(borrow.withdrawal(amountToPay));
                 isPayLoanActivate = true;
             }
         }
@@ -236,8 +245,6 @@ public class ABSEngine implements Engine {
         return isDeposit;
     }
 
-
-    //TODO improve the filters maybe Streams
     @Override
     public ArrayList<String> filterLoans(String customerID, int amount, String category, int interestParYaz, int minYazForLoan) {
 
@@ -284,7 +291,6 @@ public class ABSEngine implements Engine {
     public boolean buildFromXML(String path) {
         try {
             InputStream inputStream = new FileInputStream(new File(path));
-            ///TODO add QA/////
             AbsDescriptor absDescriptor = deserializeFrom(inputStream);
             setCategories(ABSParser.paresCategories(absDescriptor));
             setCustomers(ABSParser.paresCustomers(absDescriptor));

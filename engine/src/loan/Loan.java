@@ -6,10 +6,8 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 
 public class Loan {
-    ///todo classs infos
+
     protected final String id;
-
-
     protected final String owner;
     protected final String category;
     protected final Integer totalYazTime;
@@ -44,9 +42,7 @@ public class Loan {
         return status;
     }
 
-    public Integer getTotalWorthLoan() {
-        return (int) (capital + (capital * (interestPerPayment / 100)));
-    }
+
 
     public String getCategory() {
         return category;
@@ -68,7 +64,6 @@ public class Loan {
                 ", capital= " + capital +
                 ", paysEveryYaz= " + paysEveryYaz +
                 ", interestPerPayment= " + interestPerPayment +
-                ", TotalWorthLoan= " + getTotalWorthLoan() +
                 ", status= ";
     }
 
